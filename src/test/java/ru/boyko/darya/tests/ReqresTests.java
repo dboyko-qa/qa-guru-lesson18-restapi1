@@ -1,14 +1,21 @@
-package ru.boyko.darya;
+package ru.boyko.darya.tests;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apiguardian.api.API;
+import io.qameta.allure.restassured.AllureRestAssured;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.boyko.darya.models.User;
+import ru.boyko.darya.models.UserCreateResponseModel;
 
 import static io.restassured.RestAssured.*;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.hamcrest.Matchers.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static ru.boyko.darya.helpers.CustomAllureListener.withCustomTemplates;
 
 public class ReqresTests {
 
@@ -18,9 +25,11 @@ public class ReqresTests {
     public static final Integer STATUS_CODE_CREATED = 201;
     public static final Integer STATUS_CODE_UNSUPPORTED_MEDIA_TYPE = 415;
 
-    @BeforeEach
+     @BeforeEach
     public void beforeEach(){
         baseURI = "https://reqres.in";
+        RestAssured.filters(withCustomTemplates()); //
+
     }
 
     @Test
@@ -52,21 +61,30 @@ public class ReqresTests {
     }
 
     @Test
-    public void createUserPostTest() throws JsonProcessingException {
-        User user = new User("morpheus", "leader");
-        ObjectMapper objectMapper = new ObjectMapper();
-        String userJson = objectMapper.writeValueAsString(user);
+    public void createUserPostTest(){
+        // method shows using Lombok plugin for sending and receiving data in REST commands
+        String userName ="morpheus";
+        String userJob = "leader";
 
-        given()
+        User user = new User();
+        user.setName(userName);
+        user.setJob(userJob);
+
+        UserCreateResponseModel userCreateResponse = given()
                 .log().uri()
                 .log().body(true)
-                .body(userJson)
+                .contentType(ContentType.JSON)
+                .body(user)
                 .when()
                 .post(API_USERS)
                 .then()
                 .log().body()
                 .statusCode(STATUS_CODE_CREATED)
-                .body(matchesJsonSchemaInClasspath("schemes/create-user-scheme.json"));
+                .body(matchesJsonSchemaInClasspath("schemes/create-user-scheme.json"))
+                .extract().as(UserCreateResponseModel.class);
+
+        assertAll(() -> assertEquals(userName, userCreateResponse.getName()),
+        () -> assertEquals(userJob, userCreateResponse.getJob()));
     }
 
     @Test
