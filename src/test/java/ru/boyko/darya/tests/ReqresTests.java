@@ -1,6 +1,7 @@
 package ru.boyko.darya.tests;
 
 import io.restassured.http.ContentType;
+import io.restassured.specification.ResponseSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.boyko.darya.models.ResourceResponseModel;
@@ -12,7 +13,7 @@ import static io.restassured.RestAssured.*;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static ru.boyko.darya.helpers.Constants.*;
+import static ru.boyko.darya.specifications.DeleteUserSpecs.*;
 import static ru.boyko.darya.specifications.GetResourceSpecs.*;
 import static io.qameta.allure.Allure.step;
 import static ru.boyko.darya.specifications.GetUserSpecs.*;
@@ -80,13 +81,13 @@ public class ReqresTests {
         UserCreateResponseModel userCreateResponse = step("Send create user request",
                 () -> given()
                         .spec(userPostRequestSpec)
-                .body(employeerUser)
-                .when()
-                .post()
-                .then()
+                        .body(employeerUser)
+                        .when()
+                        .post()
+                        .then()
                         .spec(userPostResponseSpec)
-                .body(matchesJsonSchemaInClasspath("schemes/create-user-scheme.json"))
-                .extract().as(UserCreateResponseModel.class));
+                        .body(matchesJsonSchemaInClasspath("schemes/create-user-scheme.json"))
+                        .extract().as(UserCreateResponseModel.class));
 
         step("Verify result", () -> assertAll(
                 () -> assertEquals(userName, userCreateResponse.getName()),
@@ -96,21 +97,22 @@ public class ReqresTests {
 
     @Test
     public void createUserPostEmptyBodyTest() {
-         given()
-                //.spec(userEmptyPostRequestSpec)
+        step("Send request and verify status code", () -> given()
+                .spec(userEmptyPostRequestSpec)
                 .when()
-                .post(API_USERS)
+                .post()
                 .then()
-                 .statusCode(415);
-                //.spec(userPostResponseSpec)
+                .spec(userUnsupportedPostResponseSpec));
     }
 
     @Test
     public void deleteUserTest() {
         Integer userId = 1;
-        given()
-                .delete(API_USERS + "/" + userId)
+        step("Send request and verify status code", () -> given()
+                .spec(userDeleteSuccessRequestSpec)
+                .delete("/" + userId)
                 .then()
-                .statusCode(204);
+                .spec(userDeleteSuccessResponseSpec)
+        );
     }
 }
