@@ -1,23 +1,20 @@
 package ru.boyko.darya.tests;
 
-import io.restassured.http.ContentType;
-import io.restassured.specification.ResponseSpecification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.boyko.darya.models.ResourceResponseModel;
 import ru.boyko.darya.models.EmployeerUser;
+import ru.boyko.darya.models.ResourceResponseModel;
 import ru.boyko.darya.models.UserCreateResponseModel;
 import ru.boyko.darya.models.UserGetResponseModel;
+import ru.boyko.darya.specifications.Specs;
 
-import static io.restassured.RestAssured.*;
+import static io.qameta.allure.Allure.step;
+import static io.restassured.RestAssured.baseURI;
+import static io.restassured.RestAssured.given;
 import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static ru.boyko.darya.specifications.DeleteUserSpecs.*;
-import static ru.boyko.darya.specifications.GetResourceSpecs.*;
-import static io.qameta.allure.Allure.step;
-import static ru.boyko.darya.specifications.GetUserSpecs.*;
-import static ru.boyko.darya.specifications.PostUserSpecs.*;
+import static ru.boyko.darya.specifications.Specs.*;
 
 public class ReqresTests {
 
@@ -33,7 +30,7 @@ public class ReqresTests {
         ResourceResponseModel resourceResponse = step("Request resource", () ->
                 given()
                         .spec(resourceRequestSpec)
-                        .get("/" + resourceId.toString())
+                        .get("/" + resourceId)
                         .then()
                         .spec(resourceResponseSpec)
                         .extract().as(ResourceResponseModel.class)
@@ -52,7 +49,7 @@ public class ReqresTests {
         UserGetResponseModel userResponse = step("Request users list", () ->
                 given()
                         .spec(userRequestSpec)
-                        .params("page", page.toString())
+                        .params("page", page)
                         .when()
                         .get()
                         .then()
@@ -80,12 +77,12 @@ public class ReqresTests {
 
         UserCreateResponseModel userCreateResponse = step("Send create user request",
                 () -> given()
-                        .spec(userPostRequestSpec)
+                        .spec(Specs.userPostRequestSpec)
                         .body(employeerUser)
                         .when()
                         .post()
                         .then()
-                        .spec(userPostResponseSpec)
+                        .spec(Specs.userPostResponseSpec)
                         .body(matchesJsonSchemaInClasspath("schemes/create-user-scheme.json"))
                         .extract().as(UserCreateResponseModel.class));
 
@@ -98,18 +95,18 @@ public class ReqresTests {
     @Test
     public void createUserPostEmptyBodyTest() {
         step("Send request and verify status code", () -> given()
-                .spec(userEmptyPostRequestSpec)
+                .spec(Specs.userRequestSpec)
                 .when()
                 .post()
                 .then()
-                .spec(userUnsupportedPostResponseSpec));
+                .spec(Specs.userUnsupportedPostResponseSpec));
     }
 
     @Test
     public void deleteUserTest() {
         Integer userId = 1;
         step("Send request and verify status code", () -> given()
-                .spec(userDeleteSuccessRequestSpec)
+                .spec(userPostRequestSpec)
                 .delete("/" + userId)
                 .then()
                 .spec(userDeleteSuccessResponseSpec)
